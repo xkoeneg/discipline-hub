@@ -22,9 +22,12 @@ and the version number goes up automatically.
     npm run android:open   # open in Android Studio (needs Android Studio)
 
 ## How the challenge works
-- First launch has no challenge. Tap **Start 100-day challenge** — Day 1 is that day.
+- First launch has no challenge. Tap **Configure new challenge**: set a title, the number of days (3-365),
+  how many re-checks you get, and your daily tasks. Day 1 is the day you start.
+- Once a challenge exists, the button becomes **Edit challenge**: change the title, length (not shorter than today)
+  and tasks. The re-check number is fixed at creation and can never be raised.
 - At the end of each day: all tasks done = complete, otherwise failed (also failed if you never opened the app that day).
-- **Delete challenge** (Configure -> Danger zone) wipes progress, tasks and tokens and returns to the start screen.
+- **Delete challenge** (inside Edit challenge -> Danger zone) wipes everything and returns to the start screen.
 
 ## Notes
 - The signing key + password are committed on purpose so updates always install over each other.
