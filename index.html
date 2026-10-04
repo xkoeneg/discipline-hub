@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="dark light" />
+    <title>Discipline Hub</title>
+    <link rel="icon" href="/favicon.ico" type="image/x-icon" />
+    <script>
+      // Apply the saved theme before first paint so there is no dark/light flash.
+      try {
+        var s = JSON.parse(localStorage.getItem("discipline-hub:v2") || "{}");
+        if (s.dark === false) document.documentElement.classList.remove("dark");
+      } catch (e) {}
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
