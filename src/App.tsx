@@ -130,7 +130,8 @@ function dayDate(startDate: string, day: number) {
   return d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric", year: "numeric" });
 }
 
-// ---- Timeline grid: boxes never get smaller than MIN_BOX (so they stay easy to tap) and always fill the card ----
+// ---- Timeline grid: boxes never get smaller than MIN_BOX (so they stay easy to tap) and every row always
+// fills the whole card. Days are split evenly over the rows; a row with fewer days gets wider boxes, so there are never gaps.
 const GRID_GAP = 6;
 const MIN_BOX = 36;
 
@@ -147,11 +148,20 @@ function useGridLayout(count: number) {
   }, [el]);
   const w = width || 300;
   const maxCols = Math.max(1, Math.floor((w + GRID_GAP) / (MIN_BOX + GRID_GAP)));
-  const rows = Math.max(1, Math.ceil(count / maxCols));
-  const cols = Math.max(1, Math.ceil(count / rows)); // evens out the rows, so few days fill the card too
-  const box = (w - (cols - 1) * GRID_GAP) / cols;
-  const font = Math.round(Math.max(9, Math.min(22, box * 0.34)));
-  return { setEl, cols, font };
+  const rowCount = Math.max(1, Math.ceil(count / maxCols));
+  const base = Math.floor(count / rowCount);
+  const extra = count % rowCount; // the first `extra` rows hold one more day
+  const rows: { start: number; count: number }[] = [];
+  let start = 1;
+  for (let r = 0; r < rowCount; r++) {
+    const n = base + (r < extra ? 1 : 0);
+    rows.push({ start, count: n });
+    start += n;
+  }
+  const widest = Math.max(...rows.map((r) => r.count));
+  const size = (w - (widest - 1) * GRID_GAP) / widest; // every row has this height
+  const font = Math.round(Math.max(9, Math.min(22, size * 0.34)));
+  return { setEl, rows, size, font };
 }
 
 export default function App() {
@@ -372,24 +382,28 @@ export default function App() {
               </div>
 
               <div className="rounded-lg border border-border bg-card p-4 shadow-sm">
-                <div ref={grid.setEl} className="grid" style={{ gridTemplateColumns: `repeat(${grid.cols}, minmax(0, 1fr))`, gap: GRID_GAP }} aria-label={`Days 1 through ${length}`}>
-                  {Array.from({ length }, (_, index) => {
-                    const day = index + 1;
-                    const state = getDayState(day);
-                    const stateClass: Record<DayState, string> = {
-                      complete: "bg-success text-success-foreground border-success",
-                      failed: "bg-destructive text-destructive-foreground border-destructive",
-                      rechecked: "bg-recheck text-recheck-foreground border-recheck",
-                      today: "bg-accent text-accent-foreground border-primary ring-2 ring-primary/25",
-                      upcoming: "bg-transparent text-muted-foreground border-border border-dashed",
-                    };
-                    const isToday = !finished && day === today;
-                    return (
-                      <button type="button" key={day} data-day-cell onClick={() => setSelectedDay(day)} title={`Day ${day}: ${state}`} aria-label={`Day ${day}, ${state}`} style={{ fontSize: grid.font }} className={cn("grid aspect-square min-w-0 cursor-pointer select-none place-items-center rounded-md border font-mono transition-transform hover:scale-105", stateClass[state], isToday && state === "complete" && "ring-2 ring-primary")}>
-                        {day}
-                      </button>
-                    );
-                  })}
+                <div ref={grid.setEl} className="flex flex-col" style={{ gap: GRID_GAP }} aria-label={`Days 1 through ${length}`}>
+                  {grid.rows.map((row) => (
+                    <div key={row.start} className="flex" style={{ gap: GRID_GAP, height: grid.size }}>
+                      {Array.from({ length: row.count }, (_, i) => {
+                        const day = row.start + i;
+                        const state = getDayState(day);
+                        const stateClass: Record<DayState, string> = {
+                          complete: "bg-success text-success-foreground border-success",
+                          failed: "bg-destructive text-destructive-foreground border-destructive",
+                          rechecked: "bg-recheck text-recheck-foreground border-recheck",
+                          today: "bg-accent text-accent-foreground border-primary ring-2 ring-primary/25",
+                          upcoming: "bg-transparent text-muted-foreground border-border border-dashed",
+                        };
+                        const isToday = !finished && day === today;
+                        return (
+                          <button type="button" key={day} data-day-cell onClick={() => setSelectedDay(day)} title={`Day ${day}: ${state}`} aria-label={`Day ${day}, ${state}`} style={{ fontSize: grid.font }} className={cn("grid h-full min-w-0 flex-1 cursor-pointer select-none place-items-center rounded-md border font-mono transition-transform hover:scale-105", stateClass[state], isToday && state === "complete" && "ring-2 ring-primary")}>
+                            {day}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ))}
                 </div>
                 <div className="mt-4 flex flex-wrap gap-x-3 gap-y-2">
                   <Legend color="bg-success" label="Complete" />
